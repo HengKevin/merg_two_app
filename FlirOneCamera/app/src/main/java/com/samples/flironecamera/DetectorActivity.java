@@ -151,7 +151,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
   private Matrix frameToCropTransform;
   private Matrix cropToFrameTransform;
-  //private Matrix cropToPortraitTransform;
 
   private MultiBoxTracker tracker;
 
