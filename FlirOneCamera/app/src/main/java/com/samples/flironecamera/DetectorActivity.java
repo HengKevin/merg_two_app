@@ -1232,7 +1232,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             e.printStackTrace();
         }
 
-
+//        Reconsider db connection
 
 //        db.collection(currentuser)
 //                .document("Face")
