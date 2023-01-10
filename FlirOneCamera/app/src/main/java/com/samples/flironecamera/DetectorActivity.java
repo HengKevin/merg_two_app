@@ -94,6 +94,7 @@ import com.samples.flironecamera.env.Logger;
 import com.samples.flironecamera.tflite.SimilarityClassifier;
 import com.samples.flironecamera.tflite.TFLiteObjectDetectionAPIModel;
 import com.samples.flironecamera.tracking.ApiClient;
+import com.samples.flironecamera.tracking.AttendanceClient;
 import com.samples.flironecamera.tracking.MultiBoxTracker;
 
 import org.json.JSONArray;
@@ -1288,7 +1289,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 if (Attendance != 0) {
 //                    sendAttenDanceToFirebase(resultMap.get("Id"), date, userIDFace.get(resultMap.get("Id")), resultMap.get("Temp"));
                     try {
-                        sendAttendanceToAPI(resultMap.get("Id"), date, userIDFace.get(resultMap.get("Id")), resultMap.get("Temp"));
+                        sendAttendanceToAPI(resultMap.get("Id"), userIDFace.get(resultMap.get("Id")), resultMap.get("Temp"));
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -1339,7 +1340,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     if (Attendance != 0 && !resultMap.get("Temp").equals("0.0")) {
 //                        sendAttenDanceToFirebase(resultMap.get("Id"), date, userIDFace.get(resultMap.get("Id")), resultMap.get("Temp"));
                         try {
-                            sendAttendanceToAPI(resultMap.get("email"), date, userIDFace.get(resultMap.get("email")), resultMap.get("Temp"));
+                            sendAttendanceToAPI(resultMap.get("email"), userIDFace.get(resultMap.get("email")), resultMap.get("Temp"));
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -1451,22 +1452,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         }
     }
 
-
-    public void sendAttenDanceToFirebase(String ID, String Date, String Name, String Temperature) {
-
-        db = FirebaseFirestore.getInstance();
-        location_txt = dropdown.getSelectedItem().toString();
-        String Status = "OK";
-        String hour = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
-
-        Present_student student = new Present_student(ID, Name, Status, Temperature, Date, location_txt, hour);
-
-        db.collection(currentuser).
-                document("Attendance")
-                .update(location_txt + "." + Date, FieldValue.arrayUnion(student));
-
-    }
-
     public void getLocationNames() {
         List<Map<String, Object>> locationList = new ArrayList<>();
 
@@ -1506,49 +1491,20 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         mQueue.add(request);
     }
 
-    public void sendAttendanceToAPI(String userEmail, String Date, String name, String Temperature) throws JSONException {
+    public void sendAttendanceToAPI(String userEmail, String name, String Temperature) throws JSONException {
 
         location_txt = dropdown.getSelectedItem().toString();
         String Status = "OK";
-        String hour = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
 
-        URL url = null;
-        try {
-            url = new URL("https://rest-attend-api-production.up.railway.app/attendances");
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-        HttpURLConnection conn = null;
-        try {
-            conn = (HttpURLConnection) url.openConnection();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            conn.setRequestMethod("POST");
-        } catch (ProtocolException e) {
-            e.printStackTrace();
-        }
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setDoOutput(true);
+        Map<String, String> data = new HashMap<>();
+        data.put("temperature", Temperature);
+        data.put("status", Status);
+        data.put("location", location_txt);
+        data.put("userEmail", userEmail);
 
-        String requestBody = "{\"status\": \"" + Status + "\", \"userEmail\": \"" + userEmail + "\", \"location\": \"" + location_txt + "\", \"temperature\"" + Temperature + "\"}";
-        OutputStream os = null;
-        try {
-            os = conn.getOutputStream();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            os.write(requestBody.getBytes());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            os.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        AttendanceClient attendanceClient = new AttendanceClient(getApplicationContext());
+        attendanceClient.sendData(data);
+        progressDialog.dismiss();
     }
 
 
