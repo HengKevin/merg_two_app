@@ -18,7 +18,6 @@ package com.samples.flironecamera;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -33,7 +32,6 @@ import android.graphics.Typeface;
 import android.hardware.camera2.CameraCharacteristics;
 import android.media.ImageReader.OnImageAvailableListener;
 import android.media.MediaPlayer;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -51,8 +49,6 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.RequiresApi;
-
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -61,31 +57,26 @@ import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpEntity;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.NameValuePair;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.HttpClient;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.methods.HttpPost;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.message.BasicNameValuePair;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.gson.JsonObject;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.face.Face;
 import com.google.mlkit.vision.face.FaceDetection;
 import com.google.mlkit.vision.face.FaceDetector;
 import com.google.mlkit.vision.face.FaceDetectorOptions;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -102,6 +93,7 @@ import com.samples.flironecamera.env.ImageUtils;
 import com.samples.flironecamera.env.Logger;
 import com.samples.flironecamera.tflite.SimilarityClassifier;
 import com.samples.flironecamera.tflite.TFLiteObjectDetectionAPIModel;
+import com.samples.flironecamera.tracking.ApiClient;
 import com.samples.flironecamera.tracking.MultiBoxTracker;
 
 import org.json.JSONArray;
@@ -121,12 +113,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private static final int TF_OD_API_INPUT_SIZE = 160;
     private static final boolean TF_OD_API_IS_QUANTIZED = false;
     private static final String TF_OD_API_MODEL_FILE = "facenet.tflite";
-    //private static final String TF_OD_API_MODEL_FILE = "facenet_hiroki.tflite";
-
-    // MobileFaceNet
-//  private static final int TF_OD_API_INPUT_SIZE = 112;
-//  private static final boolean TF_OD_API_IS_QUANTIZED = false;
-//  private static final String TF_OD_API_MODEL_FILE = "mobile_face_net.tflite";
 
 
     private static final String TF_OD_API_LABELS_FILE = "file:///android_asset/labelmap.txt";
@@ -137,8 +123,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private static final boolean MAINTAIN_ASPECT = false;
 
     private static final Size DESIRED_PREVIEW_SIZE = new Size(640, 480);
-    //private static final int CROP_SIZE = 320;
-    //private static final Size CROP_SIZE = new Size(320, 320);
 
 
     private static final boolean SAVE_PREVIEW_BITMAP = false;
@@ -257,16 +241,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             if (currentuser != null) {
                 email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
             }
-
-//    temperatureData="0";
-//    LoadFaceFromFirebase();
-
-
-//    faceLocation=findViewById(R.id.FaceText);
-
-//      userIDFace.put("0","m");
-//      tracker.setIdname(userIDFace);
-
             getLocationNames();
             emailText = findViewById(R.id.showEmail);
             emailText.setText(email);
@@ -302,22 +276,19 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
           }
         });
-        db.collection(currentuser).document("Email").get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-          @Override
-          public void onSuccess(DocumentSnapshot documentSnapshot) {
+        db.collection(currentuser).document("Email").get().addOnSuccessListener(documentSnapshot -> {
 
-            if (documentSnapshot.exists()) {
+          if (documentSnapshot.exists()) {
 
-              Map<String, Object> emails = documentSnapshot.getData();
-              for (Map.Entry<String, Object> user_name : emails.entrySet()) {
-                Map<String, Object> mail = (Map<String, Object>) user_name.getValue();
-                em.add(mail.get("email").toString());
-              }
-              successToast(temperatureData);
-              successToast("Registered Face");
+            Map<String, Object> emails = documentSnapshot.getData();
+            for (Map.Entry<String, Object> user_name : emails.entrySet()) {
+              Map<String, Object> mail = (Map<String, Object>) user_name.getValue();
+              em.add(mail.get("email").toString());
             }
-
+            successToast(temperatureData);
+            successToast("Registered Face");
           }
+
         });
             emailText.setText(email);
 //
@@ -333,14 +304,11 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     Fetch_Detail_From_Api();
 
                     Handler handler = new Handler();
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            check = 1;
-                            LoadFaceFromFirebase();
-                            successToast(String.valueOf(AllFaceFromDataBase.size()));
-                            tracker.setIdname(userIDFace);
-                        }
+                    handler.postDelayed(() -> {
+                        check = 1;
+                        LoadFaceFromFirebase();
+                        successToast(String.valueOf(AllFaceFromDataBase.size()));
+                        tracker.setIdname(userIDFace);
                     }, 6000);
 
                 }
@@ -376,12 +344,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             IdFace = new HashSet<>();
             temperatures = new ArrayList<>();
 
-            fabAdd.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    onAddClick();
-                }
-            });
+            fabAdd.setOnClickListener(view -> onAddClick());
 
             // Real-time contour detection of multiple faces
             FaceDetectorOptions options =
@@ -411,9 +374,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     @Override
     public synchronized void onPause() {
         super.onPause();
-//    Attendance=1;
-//    Noattendance=0;
-//    LoadFaceFromFirebase();
     }
 
     @Override
@@ -425,9 +385,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         borderedText = new BorderedText(textSizePx);
         borderedText.setTypeface(Typeface.MONOSPACE);
         tracker = new MultiBoxTracker(this);
-
-//    final ActionBar.LayoutParams layoutparams= (ActionBar.LayoutParams) faceLocation.getLayoutParams();
-//    layoutparams.setMargins(size.getWidth()/2,size.getHeight()/2,size.getWidth()/2,size.getHeight()/2);
 
 
         try {
@@ -482,12 +439,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         cropW, cropH,
                         sensorOrientation, MAINTAIN_ASPECT);
 
-//    frameToCropTransform =
-//            ImageUtils.getTransformationMatrix(
-//                    previewWidth, previewHeight,
-//                    previewWidth, previewHeight,
-//                    sensorOrientation, MAINTAIN_ASPECT);
-
         cropToFrameTransform = new Matrix();
         frameToCropTransform.invert(cropToFrameTransform);
 
@@ -518,10 +469,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     @Override
     protected void processImage() {
-//    if (connectedIdentity==null){
-//      Connect();
-//    }
-
 
         ++timestamp;
         final long currTimestamp = timestamp;
@@ -556,59 +503,55 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         faceDetector
                 .process(image)
-                .addOnSuccessListener(new OnSuccessListener<List<Face>>() {
-                    @Override
-                    public void onSuccess(List<Face> faces) {
-                        if (faces.size() == 0) {
-                            updateResults(currTimestamp, new LinkedList<>());
-                            temperatureText.setText("");
-                            Noface += 1;
-                            IdFace.clear();
-                            temperatures.clear();
-                            temperatureData = "0";
-                            temporary = 0f;
+                .addOnSuccessListener(faces -> {
+                    if (faces.size() == 0) {
+                        updateResults(currTimestamp, new LinkedList<>());
+                        temperatureText.setText("");
+                        Noface += 1;
+                        IdFace.clear();
+                        temperatures.clear();
+                        temperatureData = "0";
+                        temporary = 0f;
 
-                            // 500 equal to 1 minute
-                            // go to home page after no face detected  15 min
-                            if (Noface >= 500 * 15 && k == 0) {
+                        // 500 equal to 1 minute
+                        // go to home page after no face detected  15 min
+                        if (Noface >= 500 * 15 && k == 0) {
 
-                                k = 1;
-                                gotoHome();
-                            }
-                            return;
+                            k = 1;
+                            gotoHome();
+                        }
+                        return;
 
-                        } else {
+                    } else {
 
-                            if (Float.parseFloat(temperatureData) > 29) {
+                        if (Float.parseFloat(temperatureData) > 29) {
 
-                                if (Float.parseFloat(temperatureData) >= temporary) {
+                            if (Float.parseFloat(temperatureData) >= temporary) {
 
-                                    temperatureText.setText(temperatureData + " °C");
-                                    temporary = Float.parseFloat(temperatureData);
-
-                                } else {
-                                    temperatureText.setText(String.valueOf(temporary) + " °C");
-                                }
+                                temperatureText.setText(temperatureData + " °C");
+                                temporary = Float.parseFloat(temperatureData);
 
                             } else {
-                                temperatureText.setText("");
+                                temperatureText.setText((temporary) + " °C");
                             }
 
-
+                        } else {
+                            temperatureText.setText("");
                         }
-                        runInBackground(
-                                new Runnable() {
-                                    @Override
-                                    public void run() {
-
-                                        onFacesDetected(currTimestamp, faces, addPending);
-                                        addPending = false;
 
 
-                                    }
-                                });
                     }
+                    runInBackground(
+                            new Runnable() {
+                                @Override
+                                public void run() {
 
+                                    onFacesDetected(currTimestamp, faces, addPending);
+                                    addPending = false;
+
+
+                                }
+                            });
                 });
     }
 
@@ -662,12 +605,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             matrix.postRotate(applyRotation);
         }
 
-//        // Account for the already applied rotation, if any, and then determine how
-//        // much scaling is needed for each axis.
-//        final boolean transpose = (Math.abs(applyRotation) + 90) % 180 == 0;
-//        final int inWidth = transpose ? srcHeight : srcWidth;
-//        final int inHeight = transpose ? srcWidth : srcHeight;
-
         if (applyRotation != 0) {
 
             // Translate back from origin centered reference to destination frame.
@@ -701,60 +638,57 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         NewPerson = rec;
 //    etName.setHint("Enter name");
         id.setHint("Enter Email Address");
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
+        builder.setNegativeButton("Cancel", (dialog, which) -> {
 
-            }
         });
 
 
         // add face to database by just enter the email
 
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dlg, int i) {
-                String name;
-                String email = id.getText().toString();
+        builder.setPositiveButton("OK", (dlg, i) -> {
+            String name;
+            String email = id.getText().toString();
 
-                if (email.isEmpty()) {
-                    return;
-                }
-
-                email = email.replaceAll("\\.", "");
-                name = getNameFromEmail(email);
-                NameFromFirebase = name;
-                ID = email;
-
-                if (name.isEmpty() || email.isEmpty()) {
-                    return;
-                }
-
-                ArrayList<Float> n = new ArrayList<>();
-                String string_n = "";
-                HashMap<String, Object> user = new HashMap<>();
-
-                user.put("Id", rec.getId());
-                user.put("Distance", rec.getDistance());
-                user.put("Title", rec.getTitle());
-
-
-                //need to change to email
-                user.put("Name", name);
-                user.put("ID", email);
-                user.put("Extra", rec.getExtra().toString());
-
-
-                userIDFace.put(email, name);
-
-                builder.setCancelable(false);
-
-                progressDialog = new ProgressDialog(DetectorActivity.this);
-                progressDialog.setMessage("Uploading Image To DataBase..!");
-                progressDialog.show();
-                AddNewFace();
-                dlg.dismiss();
+            if (email.isEmpty()) {
+                return;
             }
+
+            email = email.replaceAll("\\.", "");
+            name = getNameFromEmail(email);
+            NameFromFirebase = name;
+            ID = email;
+
+            if (name.isEmpty() || email.isEmpty()) {
+                return;
+            }
+
+            HashMap<String, Object> user = new HashMap<>();
+
+            user.put("Id", rec.getId());
+            user.put("Distance", rec.getDistance());
+            user.put("Title", rec.getTitle());
+
+
+            //need to change to email
+            user.put("Name", name);
+            user.put("ID", email);
+            user.put("Extra", rec.getExtra().toString());
+
+
+            userIDFace.put(email, name);
+
+            builder.setCancelable(false);
+
+            progressDialog = new ProgressDialog(DetectorActivity.this);
+            String reques = "{\"name\": \"" + name + "\", \"email\": \"" + ID + "\", \"faceString\": \"" + rec.getExtra().toString() + "\"}";
+            System.out.println("Input request body: ");
+            System.out.println(reques);
+            progressDialog.setMessage("Uploading Image To DataBase..!");
+            progressDialog.show();
+            AddNewFace();
+            System.out.println("Hello bro");
+            dlg.dismiss();
+            System.out.println("I'm arrived here");
         });
 
 
@@ -793,14 +727,11 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         }
 
         runOnUiThread(
-                new Runnable() {
-                    @Override
-                    public void run() {
+                () -> {
 
-                        showFrameInfo(previewWidth + "x" + previewHeight);
-                        showCropInfo(croppedBitmap.getWidth() + "x" + croppedBitmap.getHeight());
-                        showInference(lastProcessingTimeMs + "ms");
-                    }
+                    showFrameInfo(previewWidth + "x" + previewHeight);
+                    showCropInfo(croppedBitmap.getWidth() + "x" + croppedBitmap.getHeight());
+                    showInference(lastProcessingTimeMs + "ms");
                 });
 
     }
@@ -839,14 +770,10 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 //    updateResults(currTime, facees);;
     }
 
-    long currTime;
-    List<SimilarityClassifier.Recognition> facees;
-
     private void onFacesDetected(long currTimestamp, List<Face> faces, boolean add) {
 //    detectFace();
         if (Float.parseFloat(temperatureData) >= 0) {
             cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
-            final Canvas canvas = new Canvas(cropCopyBitmap);
             final Paint paint = new Paint();
             paint.setColor(Color.RED);
             paint.setStyle(Style.STROKE);
@@ -882,7 +809,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             cv.drawBitmap(rgbFrameBitmap, transform, null);
 
             final Canvas cvFace = new Canvas(faceBmp);
-            boolean saved = false;
             Face facea = faces.get(0);
 //      detectFace();
             final RectF boundingBoxt = new RectF(facea.getBoundingBox());
@@ -980,11 +906,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
                         extra = result.getExtra();
 
-                        //          Object extra = result.getExtra();
-                        //          if (extra != null) {
-                        //            LOGGER.i("embeeding retrieved " + extra.toString());
-                        //          }
-
                         float conf = result.getDistance();
                         if (conf < 0.69f) {
                             confidence = conf;
@@ -1053,11 +974,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             }
 
 
-            //    if (saved) {
-            //      lastSaved = System.currentTimeMillis();
-            //    }
-
-
             updateResults(currTimestamp, mappedRecognitions);
 
         } else {
@@ -1067,54 +983,20 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     }
 
-    private ImageView testImage;
-
-    //  public static byte[] getBytes(Bitmap bitmap) {
-//    ByteArrayOutputStream stream = new ByteArrayOutputStream();
-//    bitmap.compress(Bitmap.CompressFormat.PNG, 0, stream);
-//    return stream.toByteArray();
-//  }
-//
-//
-//  public Bitmap getBitmap(byte[] bytedata){
-//    Bitmap bitmap = BitmapFactory.decodeByteArray(bytedata, 0, bytedata.length);
-//    return bitmap;
-//  }
-    public void addFaceToFireBase(View view) {
-
-        AddNewFace();
-    }
-
     //Dialog for user to decide to have attendance checking or not
     public void AskingDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = getLayoutInflater();
         View dialogLayout = inflater.inflate(R.layout.askingoption, null);
-        TextView asktitle = dialogLayout.findViewById(R.id.ask_title);
 
-        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                check = 1;
-                LoadFaceFromFirebase();
-                tracker.setIdname(userIDFace);
-
-//        ArrayAdapter<String> adapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_spinner_dropdown_item, items);
-
-//        Log.d("tracker", userIDFace.toString());
-//
-//        dropdown.setAdapter(adapter);
-            }
+        builder.setPositiveButton("Ok", (dialog, which) -> {
+            check = 1;
+            LoadFaceFromFirebase();
+            tracker.setIdname(userIDFace);
         });
 
         builder.setCancelable(false);
-        builder.setNegativeButton("No Thanks", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                check = 1;
-
-            }
-        });
+        builder.setNegativeButton("No Thanks", (dialog, which) -> check = 1);
         builder.setView(dialogLayout);
         builder.show();
     }
@@ -1124,28 +1006,17 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         check = 1;
         LoadFaceFromFirebase();
         tracker.setIdname(userIDFace);
-
-//        ArrayAdapter<String> adapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_spinner_dropdown_item, items);
-
-//    AddNewFace();
     }
 
 
     public void LoadFaceFromFirebase() {
         Ids.clear();
         for (Map<String, Object> document : AllFaceFromDataBase) {
-//      Log.d("string_face", document.get("Extra").toString());
             float[][] Extra = new float[1][];
-//      Toast.makeText(DetectorActivity.this,String.valueOf(AllFaceFromDataBase),Toast.LENGTH_LONG).show();
-            float Distance = Float.parseFloat(String.valueOf(document.get("Distance")));
-            String[] string_face = (String[]) document.get("Extra");
-//      ArrayList<Float> ArrayListExtra= (ArrayList<Float>) document.get("Extra");
-//      Log.d("faceeees", String.valueOf(string_face[0]));
-
+            String[] string_face = (String[]) document.get("faceString");
 
             float[] arr0 = new float[string_face.length];
-            int i = 0;
-            String Name = document.get("ID").toString();
+            String Name = document.get("name").toString();
 //      Ids.clear();
             Ids.add(Name);
             for (int k = 0; k < string_face.length; k++) {
@@ -1156,13 +1027,12 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             }
 
             Extra[0] = arr0;
-//      Log.d("faceeees", Name);
 
             SimilarityClassifier.Recognition Newface = new SimilarityClassifier.
                     Recognition(
-                    document.get("Id").toString(),
-                    document.get("Title").toString(),
-                    Distance,
+                    document.get("email").toString(),
+                    "Student",
+                    (float) -1,
                     new RectF());
 
             Newface.setExtra(Extra);
@@ -1170,7 +1040,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         }
         Toast.makeText(DetectorActivity.this, "Sucess register", Toast.LENGTH_LONG).show();
-//    Log.d("Ids", Ids.toString());
     }
 
     public String ChangeFaceArrayToStringArray(float[][] Array_face) {
@@ -1180,7 +1049,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         string_face += ind1[0];
         for (int i = 1; i <= ind1.length - 1; i++) {
-            string_face += "," + String.valueOf(ind1[i]);
+            string_face += "," + ind1[i];
 
         }
 
@@ -1190,65 +1059,34 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     // to send face to firebase if the id is not duplicate
 
-    public Map<String, Object> SendData() {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+    public void SendData() {
+        System.out.println("SendDAta function");
         Map<String, Object> user = new HashMap<>();
         float[][] n = NewPerson.getExtra();
 
-        String string_n = "";
-        string_n = ChangeFaceArrayToStringArray(n);
+        String string_n = ChangeFaceArrayToStringArray(n);
 
         // check and change for new api
-        user.put("Title", NewPerson.getTitle().toString());
-        user.put("Id", NewPerson.getId());
-        user.put("Distance", NewPerson.getDistance());
-        user.put("Name", NameFromFirebase);
-        user.put("ID", ID);
-        user.put("Extra", string_n.toString().split(","));
+        user.put("name", NameFromFirebase);
+        user.put("email", ID);
+        user.put("faceString", string_n.toString().split(","));
 
 
         AllFaceFromDataBase.add(user);
 
+        String name = NameFromFirebase;
+        String email = ID;
+        String faceString = string_n.substring(1, string_n.length() - 1);
 
-//    location_txt= dropdown.getSelectedItem().toString();
-//        People_Face people_face = new
-//                People_Face(
-//                NewPerson.getId(),
-//                NameFromFirebase,
-//                NewPerson.getDistance(),
-//                string_n.substring(1, string_n.length() - 1),
-//                NewPerson.getTitle());
 
-        JSONObject people_face = new JSONObject();
-        try {
-            people_face.put("userid", NewPerson.getId());
-            people_face.put("distance", -1);
-            people_face.put("name", NameFromFirebase);
-            people_face.put("title", "Student");
-            people_face.put("contact", NewPerson.getId());
-            people_face.put("face_data", string_n.substring(1, string_n.length() - 1));
-            people_face.put("user", NewPerson.getId());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        Map<String, String> data = new HashMap<>();
+        data.put("name", name);
+        data.put("email", email);
+        data.put("faceString", faceString);
 
-//        Reconsider db connection
-
-//        db.collection(currentuser)
-//                .document("Face")
-//                .update(ID, people_face)
-//                .addOnSuccessListener(new OnSuccessListener<Void>() {
-//                    @Override
-//                    public void onSuccess(Void aVoid) {
-//                        progressDialog.dismiss();
-//                    }
-//                });
-
-        // Post request to api
-        HttpPost post = new HttpPost("https://intech-attendance-api-production.up.railway.app/api/v1/face/");
-        post.setEntity((HttpEntity) people_face);
-
-        return user;
+        ApiClient apiClient = new ApiClient(getApplicationContext());
+        apiClient.sendData(data);
+        progressDialog.dismiss();
     }
 
 
@@ -1257,8 +1095,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             SendData();
         } else {
             progressDialog.dismiss();
-
-
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage("This ID already Contain in Database Do you want to Update?");
             builder.setCancelable(false)
@@ -1289,7 +1125,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         //fetch from api
         mQueue = Volley.newRequestQueue(DetectorActivity.this);
-        String url = "https://intech-attendance-api-production.up.railway.app/api/v1/face/?format=json";
+        String url = "https://rest-attend-api-production.up.railway.app/users";
         JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null, new Response.Listener<JSONArray>() {
             @Override
             public void onResponse(JSONArray response) {
@@ -1300,21 +1136,15 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 //            float [] face= new float[512];
                         JSONObject jsonObject = response.getJSONObject(i);
                         String name = jsonObject.getString("name");
-                        String id = jsonObject.getString("userid");
+                        String email = jsonObject.getString("email");
 
-                        String[] face = jsonObject.getString("face_data").split(",");
-//            successToast(face[0]);
+                        String[] face = jsonObject.getString("faceString").split(",");
 
-                        Double distance = jsonObject.getDouble("distance");
+                        user.put("email", email);
+                        user.put("name", name);
+                        user.put("faceString", face);
 
-                        user.put("Id", id);
-                        user.put("Distance", -1);
-                        user.put("Title", "");
-                        user.put("Extra", face);
-                        user.put("Name", name);
-                        user.put("ID", String.valueOf(i));
-
-                        userIDFace.put(user.get("ID").toString(), user.get("Name").toString());
+                        userIDFace.put(user.get("email").toString(), user.get("name").toString());
                         usersReplace.add(user);
                     }
 
@@ -1338,50 +1168,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         });
 
         mQueue.add(request);
-    }
-
-
-    public void RegisterFaceFromFireBase() {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        List<Map<String, Object>> usersReplace = new ArrayList<>();
-        db.collection(currentuser).document("Face").get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-            @Override
-            public void onSuccess(DocumentSnapshot documentSnapshot) {
-                Map<String, Object> map = documentSnapshot.getData();
-
-                if (map != null) {
-                    for (Map.Entry<String, Object> entry : map.entrySet()) {
-                        HashMap<String, Object> user = new HashMap<>();
-                        Map<String, Object> by_key = (Map<String, Object>) entry.getValue();
-
-
-                        user.put("Id", by_key.get("id"));
-                        user.put("Distance", by_key.get("distance"));
-                        user.put("Title", by_key.get("title"));
-                        user.put("Extra", by_key.get("face").toString().split(","));
-                        user.put("Name", by_key.get("name"));
-                        user.put("ID", entry.getKey());
-
-
-                        usersReplace.add(user);
-                        userIDFace.put(entry.getKey(), by_key.get("name").toString());
-
-                    }
-
-                    AllFaceFromDataBase = usersReplace;
-
-
-                } else {
-                    AllFaceFromDataBase = new ArrayList<>();
-
-                }
-
-//      Toast.makeText(DetectorActivity.this,mm,Toast.LENGTH_LONG).show();
-
-
-            }
-        });
-
     }
 
 
@@ -1428,9 +1214,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         HashMap<String, String> result = new HashMap<>();
         ArrayList<Float> temperature = new ArrayList<>();
-        Float sum = 0f;
-        Float average;
-
 
         try {
             Float last_temp = 0f;
@@ -1556,7 +1339,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     if (Attendance != 0 && !resultMap.get("Temp").equals("0.0")) {
 //                        sendAttenDanceToFirebase(resultMap.get("Id"), date, userIDFace.get(resultMap.get("Id")), resultMap.get("Temp"));
                         try {
-                            sendAttendanceToAPI(resultMap.get("Id"), date, userIDFace.get(resultMap.get("Id")), resultMap.get("Temp"));
+                            sendAttendanceToAPI(resultMap.get("email"), date, userIDFace.get(resultMap.get("email")), resultMap.get("Temp"));
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -1595,8 +1378,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 temperatures.clear();
                 Noattendance = 0;
                 prepare = 0;
-//             alert.stop();
-//             alert=MediaPlayer.create(DetectorActivity.this,R.raw.alert);
             }
         });
         name.setText("Normal");
@@ -1630,11 +1411,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 }
             }
         }, 1500);
-//     if (Float.parseFloat(result.get("Temp"))>=37.5){
-//         alert.start();
-//
-//     }
-//     temp.setText(stringFourDigits(String.valueOf(avg)));
     }
 
 
@@ -1673,12 +1449,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
             temperatures.clear();
         }
-
-//  if (AddedFace==5 && IdFace.size()>1){
-//    IdFace.clear();
-//    temperatures.clear();
-//    AddedFace=0;
-//  }
     }
 
 
@@ -1736,35 +1506,49 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         mQueue.add(request);
     }
 
-    public void sendAttendanceToAPI(String userId, String Date, String userEmail, String Temperature) throws JSONException {
+    public void sendAttendanceToAPI(String userEmail, String Date, String name, String Temperature) throws JSONException {
 
         location_txt = dropdown.getSelectedItem().toString();
-        for (int i = 0; i < AllLocation.size(); i++) {
-            Map<String, Object> innerMap = AllLocation.get(i);
-            for (Map.Entry<String, Object> entry : innerMap.entrySet()) {
-                if(entry.getValue() == location_txt) {
-                    location = entry.getKey();
-                }
-            }
-
-        }
         String Status = "OK";
         String hour = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
 
-        JSONObject student = new JSONObject();
+        URL url = null;
         try {
-            student.put("name", userId);
-            student.put("date", Date);
-            student.put("status", Status);
-            student.put("temperature", Temperature);
-            student.put("time", hour);
-            student.put("location", location);
-        } catch (Exception e) {
+            url = new URL("https://rest-attend-api-production.up.railway.app/attendances");
+        } catch (MalformedURLException e) {
             e.printStackTrace();
         }
+        HttpURLConnection conn = null;
+        try {
+            conn = (HttpURLConnection) url.openConnection();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            conn.setRequestMethod("POST");
+        } catch (ProtocolException e) {
+            e.printStackTrace();
+        }
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setDoOutput(true);
 
-        HttpPost post = new HttpPost("https://intech-attendance-api-production.up.railway.app/api/v1/attendance/");
-        post.setEntity((HttpEntity) student);
+        String requestBody = "{\"status\": \"" + Status + "\", \"userEmail\": \"" + userEmail + "\", \"location\": \"" + location_txt + "\", \"temperature\"" + Temperature + "\"}";
+        OutputStream os = null;
+        try {
+            os = conn.getOutputStream();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            os.write(requestBody.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            os.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 

@@ -30,8 +30,12 @@ import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.CameraCaptureSession;
 import android.media.Image;
 import android.media.Image.Plane;
 import android.media.ImageReader;
@@ -177,19 +181,11 @@ public String temperatureData="000";
     MyReceiver myReceiver;
     @Override
     public void onStart() {
-//        myReceiver = new test_home.MyReceiver();
-//        IntentFilter intentFilter = new IntentFilter();
-//        intentFilter.addAction(MyService2.MY_ACTION);
-//        registerReceiver(myReceiver, intentFilter);
         myReceiver = new MyReceiver();
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(MyService.MY_ACTION);
         registerReceiver(myReceiver, intentFilter);
 
-        //Start our own service
-//        Intent i = new Intent(test_home.this,
-//                MyService.class);
-//        startService(i);
         super.onStart();
         // Bind to LocalService
         Intent intent = new Intent(CameraActivity.this, MyService.class);
@@ -197,7 +193,6 @@ public String temperatureData="000";
     }
     @Override
     public void onStop() {
-//        unregisterReceiver(myReceiver);
         super.onStop();
         // Unbind from the service
         unregisterReceiver(myReceiver);
@@ -247,23 +242,12 @@ public String temperatureData="000";
         public void onReceive(Context context, Intent intent) {
             String datapassed = intent.getStringExtra("DATAPASSED");
             temperatureData=datapassed;
-//            temperatureText.setText(datapassed);
-
-//            if (Float.parseFloat(datapassed)>=33){
-//                Intent i = new Intent(test_home.this,login.class);
-//                startActivity(i);
-//            }
-
-
-
-
         }
     }
 
   private void setupView(){
       try {
           Intent intent = getIntent();
-//    useFacing = intent.getIntExtra(KEY_USE_FACING, CameraCharacteristics.LENS_FACING_FRONT);
           useFacing = intent.getIntExtra(KEY_USE_FACING, CameraCharacteristics.LENS_FACING_FRONT);
 
           getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -276,31 +260,19 @@ public String temperatureData="000";
           temperatureText.setOnClickListener(new View.OnClickListener() {
               @Override
               public void onClick(View v) {
-
                       gotoHome();
-
-
-
               }
           });
-
-
           if (hasPermission()) {
               setFragment();
           } else {
               requestPermission();
           }
 
-//    threadsTextView = findViewById(R.id.threads);
-//    plusImageView = findViewById(R.id.plus);
-//    minusImageView = findViewById(R.id.minus);
-//    apiSwitchCompat = findViewById(R.id.api_info_switch);
           bottomSheetLayout = findViewById(R.id.bottom_sheet_layout);
           gestureLayout = findViewById(R.id.gesture_layout);
           sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout);
           bottomSheetArrowImageView = findViewById(R.id.bottom_sheet_arrow);
-
-//    btnSwitchCam = findViewById(R.id.fab_switchcam);
 
           ViewTreeObserver vto = gestureLayout.getViewTreeObserver();
           vto.addOnGlobalLayoutListener(
@@ -312,7 +284,6 @@ public String temperatureData="000";
                           } else {
                               gestureLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                           }
-                          //                int width = bottomSheetLayout.getMeasuredWidth();
                           int height = gestureLayout.getMeasuredHeight();
 
                           sheetBehavior.setPeekHeight(height);
@@ -335,8 +306,9 @@ public String temperatureData="000";
                                   bottomSheetArrowImageView.setImageResource(R.drawable.icn_chevron_up);
                               }
                               break;
-                              case BottomSheetBehavior.STATE_DRAGGING:
+                              case BottomSheetBehavior.STATE_DRAGGING: {
                                   break;
+                              }
                               case BottomSheetBehavior.STATE_SETTLING:
                                   bottomSheetArrowImageView.setImageResource(R.drawable.icn_chevron_up);
                                   break;
@@ -349,55 +321,10 @@ public String temperatureData="000";
 
                   });
 
-//    frameValueTextView = findViewById(R.id.frame_info);
-//    cropValueTextView = findViewById(R.id.crop_info);
-//    inferenceTimeTextView = findViewById(R.id.inference_info);
-
-//    apiSwitchCompat.setOnCheckedChangeListener(this);
-
-//    plusImageView.setOnClickListener(this);
-//    minusImageView.setOnClickListener(this);
-
-//    btnSwitchCam.setOnClickListener(new View.OnClickListener() {
-//      @Override
-//      public void onClick(View v) {
-//        connect(cameraHandler.getFlirOne());
-//      }
-//    });
       }catch (Exception e){}
       Log.i("ccccc",cameraId.toString());
 
   }
-
-//  private void onSwitchCamClick() {
-//
-//    switchCamera();
-//
-//  }
-
-//  public void switchCamera() {
-//
-//    Intent intent = getIntent();
-//
-//    if (useFacing == CameraCharacteristics.LENS_FACING_FRONT) {
-//      useFacing = CameraCharacteristics.LENS_FACING_BACK;
-//    } else {
-//      useFacing = CameraCharacteristics.LENS_FACING_FRONT;
-//    }
-//
-//    intent.putExtra(KEY_USE_FACING, useFacing);
-//    intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-//
-//    restartWith(intent);
-//
-//  }
-
-//  private void restartWith(Intent intent) {
-//    finish();
-//    overridePendingTransition(0, 0);
-//    startActivity(intent);
-//    overridePendingTransition(0, 0);
-//  }
 
    public void gotoHome(){
        Intent i = new Intent(CameraActivity.this,test_home.class);
@@ -428,11 +355,8 @@ public String temperatureData="000";
     }
 
     try {
-      // Initialize the storage bitmaps once when the resolution is known.
       if (rgbBytes == null) {
         Camera.Size previewSize = camera.getParameters().getPreviewSize();
-//        Camera.Parameters param= camera.getParameters();
-//        param.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
           try {
               Camera.Parameters parameters = camera.getParameters();
               parameters.set("s3d-prv-frame-layout", "none");
@@ -451,11 +375,10 @@ public String temperatureData="000";
               camera.setParameters(parameters);
           } catch (Exception e) {
               // cannot get camera or does not exist
+              e.printStackTrace();
           }
         previewHeight = previewSize.height;
         previewWidth = previewSize.width;
-        //rgbBytes = new int[previewWidth * previewHeight];
-        //onPreviewSizeChosen(new Size(previewSize.width, previewSize.height), 90);
           rgbBytes = new int[previewWidth * previewHeight];
           int rotation = 90;
           if (useFacing == CameraCharacteristics.LENS_FACING_FRONT) {
@@ -473,21 +396,13 @@ public String temperatureData="000";
     yRowStride = previewWidth;
 
     imageConverter =
-        new Runnable() {
-          @Override
-          public void run() {
-            ImageUtils.convertYUV420SPToARGB8888(bytes, previewWidth, previewHeight, rgbBytes);
-          }
-        };
+            () -> ImageUtils.convertYUV420SPToARGB8888(bytes, previewWidth, previewHeight, rgbBytes);
 
     postInferenceCallback =
-        new Runnable() {
-          @Override
-          public void run() {
-            camera.addCallbackBuffer(bytes);
-            isProcessingFrame = false;
-          }
-        };
+            () -> {
+              camera.addCallbackBuffer(bytes);
+              isProcessingFrame = false;
+            };
     processImage();
   }
 
@@ -496,15 +411,6 @@ public String temperatureData="000";
   public int Noface=0;
   @Override
   public void onImageAvailable(final ImageReader reader) {
-
-//      if(Noface>=100){
-//          Intent i = new Intent(CameraActivity.this,test_home.class);
-//          startActivity(i);
-//          stop();
-//          finish();
-//
-//
-//      }
     // We need wait until we have some size from onPreviewSizeChosen
     if (previewWidth == 0 || previewHeight == 0) {
       return;
@@ -549,13 +455,10 @@ public String temperatureData="000";
           };
 
       postInferenceCallback =
-          new Runnable() {
-            @Override
-            public void run() {
-              image.close();
-              isProcessingFrame = false;
-            }
-          };
+              () -> {
+                image.close();
+                isProcessingFrame = false;
+              };
 
       processImage();
     } catch (final Exception e) {
@@ -566,24 +469,14 @@ public String temperatureData="000";
     Trace.endSection();
   }
 
-//  @Override
-//  public synchronized void onStart() {
-//    LOGGER.d("onStart " + this);
-//    super.onStart();
-//  }
 
   @Override
   public synchronized void onResume() {
-//    LOGGER.d("onResume " + this);
       handler1.postDelayed( runnable = new Runnable() {
           public void run() {
               //do something
               Message msg = Message.obtain(null, MyService.MSG_SAY_HELLO, 0, 0);
               try {
-//                    mService.send(msg);
-
-//                Toast.makeText(test_home.this,MyService.cameraHandler.getInfo(),Toast.LENGTH_SHORT).show();
-
                   Log.v(TAG, "Message sent.");
               } catch ( Exception e) {
                   e.printStackTrace();
@@ -596,15 +489,12 @@ public String temperatureData="000";
     handlerThread = new HandlerThread("inference");
     handlerThread.start();
     handler = new Handler(handlerThread.getLooper());
-
-
   }
 
   @Override
   public synchronized void onPause() {
       handler1.removeCallbacks(runnable);
       LOGGER.d("onPause " + this);
-
 
     handlerThread.quitSafely();
     try {
@@ -615,25 +505,13 @@ public String temperatureData="000";
       LOGGER.e(e, "Exception!");
     }
       super.onPause();
-
   }
 
-//  @Override
-//  public synchronized void onStop() {
-//    LOGGER.d("onStop " + this);
-//    super.onStop();
-//
-//  }
-//
   @Override
   public synchronized void onDestroy() {
     LOGGER.d("onDestroy " + this);
     super.onDestroy();
       stopService(new Intent(CameraActivity.this,MyService.class));
-//    super.onDestroy();
-//    super.stopDiscovery();
-//    cameraHandler.disconnect();
-
   }
 
   protected synchronized void runInBackground(final Runnable r) {
@@ -646,7 +524,6 @@ public String temperatureData="000";
   @Override
   public void onRequestPermissionsResult(int requestCode,  String[] permissions, int[] grantResults) {
     super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-//      permissionHandler.onRequestPermissionsResult(requestCode, permissions, grantResults);
     if (requestCode == PERMISSIONS_REQUEST) {
       if (allPermissionsGranted(grantResults)) {
         setFragment();
@@ -716,15 +593,6 @@ public String temperatureData="000";
                     continue;
                 }
 
-                // Fallback to camera1 API for internal cameras that don't have full support.
-                // This should help with legacy situations where using the camera2 API causes
-                // distorted or otherwise broken previews.
-                //final int facing =
-                //(facing == CameraCharacteristics.LENS_FACING_EXTERNAL)
-//        if (!facing.equals(useFacing)) {
-//          continue;
-//        }
-
                 final Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
 
                 if (useFacing != null &&
@@ -733,7 +601,6 @@ public String temperatureData="000";
                 ) {
                     continue;
                 }
-
 
                 useCamera2API = (facing == CameraCharacteristics.LENS_FACING_EXTERNAL)
                                 || isHardwareLevelSupported(
@@ -835,36 +702,15 @@ public String temperatureData="000";
 
   @Override
   public void onClick(View v) {
-//    if (v.getId() == R.id.plus) {
-//      String threads = threadsTextView.getText().toString().trim();
-//      int numThreads = Integer.parseInt(threads);
-//      if (numThreads >= 9) return;
-//      numThreads++;
-//      threadsTextView.setText(String.valueOf(numThreads));
-//      setNumThreads(numThreads);
-//    } else if (v.getId() == R.id.minus) {
-//      String threads = threadsTextView.getText().toString().trim();
-//      int numThreads = Integer.parseInt(threads);
-//      if (numThreads == 1) {
-//        return;
-//      }
-//      numThreads--;
-//      threadsTextView.setText(String.valueOf(numThreads));
-//      setNumThreads(numThreads);
-//    }
   }
 
   protected void showFrameInfo(String frameInfo) {
-//    frameValueTextView.setText(frameInfo);
   }
 
   protected void showCropInfo(String cropInfo) {
-//    cropValueTextView.setText(cropInfo);
   }
 
   protected void showInference(String inferenceTime) {
-//    inferenceTimeTextView.setText(inferenceTime);
-//      temperature_Data.setText("hello");
   }
 
 
