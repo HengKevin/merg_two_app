@@ -24,12 +24,14 @@ import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.hardware.camera2.CameraCharacteristics;
+import android.media.Image;
 import android.media.ImageReader.OnImageAvailableListener;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -488,6 +490,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         rgbFrameBitmap.setPixels(getRgbBytes(), 0, previewWidth, 0, 0, previewWidth, previewHeight);
 
         readyForNextImage();
+
+        // converting bitmap object to YUV_420_888 format
+
 
 
         final Canvas canvas = new Canvas(croppedBitmap);
@@ -1017,7 +1022,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             String[] string_face = (String[]) document.get("faceString");
 
             float[] arr0 = new float[string_face.length];
-            String Name = document.get("name").toString();
+            String Name = document.get("email").toString();
 //      Ids.clear();
             Ids.add(Name);
             for (int k = 0; k < string_face.length; k++) {
@@ -1032,7 +1037,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             SimilarityClassifier.Recognition Newface = new SimilarityClassifier.
                     Recognition(
                     document.get("email").toString(),
-                    "Student",
+                    document.get("name").toString(),
                     (float) -1,
                     new RectF());
 
@@ -1145,7 +1150,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         user.put("name", name);
                         user.put("faceString", face);
 
-                        userIDFace.put(user.get("email").toString(), user.get("name").toString());
+                        userIDFace.put(email, name);
                         usersReplace.add(user);
                     }
 
