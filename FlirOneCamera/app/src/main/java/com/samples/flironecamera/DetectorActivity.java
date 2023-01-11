@@ -687,14 +687,11 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
             progressDialog = new ProgressDialog(DetectorActivity.this);
             String reques = "{\"name\": \"" + name + "\", \"email\": \"" + ID + "\", \"faceString\": \"" + rec.getExtra().toString() + "\"}";
-            System.out.println("Input request body: ");
             System.out.println(reques);
             progressDialog.setMessage("Uploading Image To DataBase..!");
             progressDialog.show();
             AddNewFace();
-            System.out.println("Hello bro");
             dlg.dismiss();
-            System.out.println("I'm arrived here");
         });
 
 
@@ -1066,7 +1063,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     // to send face to firebase if the id is not duplicate
 
     public void SendData() {
-        System.out.println("SendDAta function");
         Map<String, Object> user = new HashMap<>();
         float[][] n = NewPerson.getExtra();
 
