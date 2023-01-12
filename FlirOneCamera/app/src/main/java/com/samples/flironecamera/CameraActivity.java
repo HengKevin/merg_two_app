@@ -89,27 +89,7 @@ public abstract class CameraActivity extends AppCompatActivity
         Camera.PreviewCallback,
         CompoundButton.OnCheckedChangeListener,
         View.OnClickListener {
-//  //add
-//  private static final String TAG = "MainActivity";
-//
-//  //Handles Android permission for eg Network
-//  private PermissionHandler permissionHandler;
-//
-//  //Handles network camera operations
-//  private CameraHandler cameraHandler;
-//
-//  private Identity connectedIdentity = null;
-//  private TextView connectionStatus;
-//  private TextView discoveryStatus;
-//
-//  private ImageView msxImage;
-//  private ImageView photoImage;
-//
-//  private LinkedBlockingQueue<FrameDataHolder> framesBuffer = new LinkedBlockingQueue(21);
-//  private UsbPermissionHandler usbPermissionHandler = new UsbPermissionHandler();
-//  public   String temperatureData = null;
-//  public TextView temperature_Data;
-public String temperatureData="000";
+    public String temperatureData="000";
 
     public interface ShowMessage {
     void show(String message);

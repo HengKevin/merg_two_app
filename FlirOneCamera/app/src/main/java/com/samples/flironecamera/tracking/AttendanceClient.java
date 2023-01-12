@@ -23,17 +23,11 @@ public class AttendanceClient {
 
     public void sendData(Map<String, String> data) {
         StringRequest stringRequest = new StringRequest(Request.Method.POST, API_URL,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        // Handle the response here
-                    }
+                response -> {
+                    // Handle the response here
                 },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        // Handle any errors here
-                    }
+                error -> {
+                    // Handle any errors here
                 }) {
             @Override
             protected Map<String, String> getParams() throws AuthFailureError {
@@ -43,7 +37,6 @@ public class AttendanceClient {
         // Add the request to the Volley request queue
         RequestQueue queue = Volley.newRequestQueue(context);
         queue.add(stringRequest);
-
     }
 }
 

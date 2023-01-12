@@ -142,7 +142,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     private boolean computingDetection = false;
     private boolean addPending = false;
-    //private boolean adding = false;
 
     private long timestamp = 0;
 
@@ -174,13 +173,12 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private Boolean Allow_FaceDetect = true;
     private int AddedFace = 0;
     private HashMap<String, String> resultMap;
-    //  private  int Noface;
     private String ID;
     private String currentuser;
     public int Attendance;
     private MediaPlayer mp;
     private MediaPlayer alert;
-    private String temperatureData="0";
+//    private String temperatureData="0";
 
     //to hide this 2 button
     private Button attendance;
@@ -230,7 +228,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     //store all the face that already take within 5 min
     private ArrayList<String> AlreadyTake = new ArrayList<>();
 
-
     //to fetch face
     private fetch_face fetch_faces;
 
@@ -238,8 +235,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        CameraHandler cameraHandler = new CameraHandler();
         try {
-//      final Intent[] i = {getIntent()};
             String email = "User";
             if (currentuser != null) {
                 email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
@@ -301,9 +298,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 @Override
                 public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                     location_txt = dropdown.getSelectedItem().toString();
-//          successToast("mother");
-//            RegisterFaceFromFireBase();
-                    // change api
                     Fetch_Detail_From_Api();
 
                     Handler handler = new Handler();
@@ -318,8 +312,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
                 @Override
                 public void onNothingSelected(AdapterView<?> parent) {
-//          LoadFaceFromFirebase();
-
                 }
             });
 
@@ -334,9 +326,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             backButton = findViewById(R.id.ChangeAttendance);
             attendance = findViewById(R.id.text_attendance);
             add_people = findViewById(R.id.GotoAddFace);
-
-            //
-//    location= findViewById(R.id.location);
 
 
             if (Attendance == 0) {
@@ -363,16 +352,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         } catch (Exception e) {
             Log.d("ex", e.toString());
         }
-
-
     }
-
-
-    private void onAddClick() {
-
-        addPending = true;
-
-    }
+    private void onAddClick() { addPending = true; }
 
     @Override
     public synchronized void onPause() {
@@ -398,14 +379,12 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                             TF_OD_API_LABELS_FILE,
                             TF_OD_API_INPUT_SIZE,
                             TF_OD_API_IS_QUANTIZED);
-            //cropSize = TF_OD_API_INPUT_SIZE;
         } catch (final IOException e) {
 
             e.printStackTrace();
             LOGGER.e(e, "Exception initializing classifier!");
-            Toast toast =
-                    Toast.makeText(
-                            getApplicationContext(), "Classifier could not be initialized", Toast.LENGTH_SHORT);
+            Toast toast = Toast.makeText(getApplicationContext(),
+                        "Classifier could not be initialized", Toast.LENGTH_SHORT);
             toast.show();
             finish();
 
@@ -491,10 +470,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         readyForNextImage();
 
-        // converting bitmap object to YUV_420_888 format
-
-
-
         final Canvas canvas = new Canvas(croppedBitmap);
         canvas.drawBitmap(rgbFrameBitmap, frameToCropTransform, null);
         // For examining the actual TF input.
@@ -544,18 +519,13 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         } else {
                             temperatureText.setText("");
                         }
-
-
                     }
                     runInBackground(
                             new Runnable() {
                                 @Override
                                 public void run() {
-
                                     onFacesDetected(currTimestamp, faces, addPending);
                                     addPending = false;
-
-
                                 }
                             });
                 });
@@ -635,22 +605,17 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         View dialogLayout = inflater.inflate(R.layout.image_edit_dialog, null);
         ImageView ivFace = dialogLayout.findViewById(R.id.dlg_image);
         TextView tvTitle = dialogLayout.findViewById(R.id.dlg_title);
-//    EditText etName = dialogLayout.findViewById(R.id.dlg_input);
         EditText id = dialogLayout.findViewById(R.id.id_input);
 
         tvTitle.setText("Add Face");
         rec.setColor(1);
         ivFace.setImageBitmap(rec.getCrop());
         NewPerson = rec;
-//    etName.setHint("Enter name");
         id.setHint("Enter Email Address");
         builder.setNegativeButton("Cancel", (dialog, which) -> {
-
         });
 
-
         // add face to database by just enter the email
-
         builder.setPositiveButton("OK", (dlg, i) -> {
             String name;
             String email = id.getText().toString();
@@ -668,19 +633,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 return;
             }
 
-            HashMap<String, Object> user = new HashMap<>();
-
-            user.put("Id", rec.getId());
-            user.put("Distance", rec.getDistance());
-            user.put("Title", rec.getTitle());
-
-
-            //need to change to email
-            user.put("Name", name);
-            user.put("ID", email);
-            user.put("Extra", rec.getExtra().toString());
-
-
             userIDFace.put(email, name);
 
             builder.setCancelable(false);
@@ -693,22 +645,15 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             AddNewFace();
             dlg.dismiss();
         });
-
-
         builder.setView(dialogLayout);
         builder.setCancelable(false);
         builder.show();
-
-
     }
 
 
     private String getNameFromEmail(String email) {
         String leftPart = email.substring(0, email.indexOf("@"));
-
-
         return leftPart;
-
     }
 
 
@@ -717,14 +662,12 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         tracker.trackResults(mappedRecognitions, currTimestamp);
         trackingOverlay.postInvalidate();
         computingDetection = false;
-        //adding = false;
 
         if (mappedRecognitions.size() > 0) {
             LOGGER.i("Adding results");
             SimilarityClassifier.Recognition rec = mappedRecognitions.get(0);
             if (rec.getExtra() != null) {
                 showAddFaceDialog(rec);
-//         framText.setText(rec.getCrop().getClass().getName().toString());
             }
 
         }
@@ -904,9 +847,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
 
                     if (resultsAux.size() > 0) {
-
                         SimilarityClassifier.Recognition result = resultsAux.get(0);
-
                         extra = result.getExtra();
 
                         float conf = result.getDistance();
@@ -916,28 +857,18 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                             if (result.getId().equals("0")) {
                                 Noattendance = 0;
                                 color = Color.GREEN;
-
-                                //              Float temp= Float.parseFloat(temperatureData);
-
                                 if (temperatureData == null) {
                                     temperatureData = "0";
                                 }
-                                //              Float temp=Float.parseFloat(temperatureData);
                                 if (Float.parseFloat(temperatureData) >= 35) {
                                     temperatures.add(temperatureData);
                                 }
-
                                 Check();
-
-//                Log.d("MyFace", String.valueOf(AddedFace));
-
                             } else {
                                 color = Color.RED;
                             }
                         } else {
                             prepare += 1;
-
-//              Log.d("kkkk", "pre" + String.valueOf(prepare));
 
                             if (prepare >= 5) {
                                 Noattendance = 1;
@@ -957,7 +888,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         } else {
                             flip.postScale(-1, 1, previewWidth / 2.0f, previewHeight / 2.0f);
                         }
-                        //flip.postScale(1, -1, targetW / 2.0f, targetH / 2.0f);
                         flip.mapRect(boundingBox);
 
                     }
@@ -1020,7 +950,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
             float[] arr0 = new float[string_face.length];
             String Name = document.get("email").toString();
-//      Ids.clear();
             Ids.add(Name);
             for (int k = 0; k < string_face.length; k++) {
 
@@ -1277,7 +1206,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         TextView temp = dialogLayout.findViewById(R.id.finalTemperature);
         TextView dateText = dialogLayout.findViewById(R.id.finalDate);
 
-
         builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -1288,12 +1216,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 temperatures.clear();
 
                 if (Attendance != 0) {
-//                    sendAttenDanceToFirebase(resultMap.get("Id"), date, userIDFace.get(resultMap.get("Id")), resultMap.get("Temp"));
-                    try {
-                        sendAttendanceToAPI(resultMap.get("Id"), userIDFace.get(resultMap.get("Id")), resultMap.get("Temp"));
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
+                    sendAttendanceToAPI(resultMap.get("Id"), userIDFace.get(resultMap.get("Id")), resultMap.get("Temp"));
                     successToast("Checked");
                 }
 
@@ -1339,12 +1262,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     temperatures.clear();
 
                     if (Attendance != 0 && !resultMap.get("Temp").equals("0.0")) {
-//                        sendAttenDanceToFirebase(resultMap.get("Id"), date, userIDFace.get(resultMap.get("Id")), resultMap.get("Temp"));
-                        try {
-                            sendAttendanceToAPI(resultMap.get("email"), userIDFace.get(resultMap.get("email")), resultMap.get("Temp"));
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
+                        sendAttendanceToAPI(resultMap.get("email"), userIDFace.get(resultMap.get("email")), resultMap.get("Temp"));
                         successToast("Checked");
                     }
                     temporary = 0f;
@@ -1492,7 +1410,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         mQueue.add(request);
     }
 
-    public void sendAttendanceToAPI(String userEmail, String name, String Temperature) throws JSONException {
+    public void sendAttendanceToAPI(String userEmail, String name, String Temperature) {
 
         location_txt = dropdown.getSelectedItem().toString();
         String Status = "OK";
@@ -1505,7 +1423,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         AttendanceClient attendanceClient = new AttendanceClient(getApplicationContext());
         attendanceClient.sendData(data);
-        progressDialog.dismiss();
     }
 
 
