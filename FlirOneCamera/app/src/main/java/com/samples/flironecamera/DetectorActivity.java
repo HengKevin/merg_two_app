@@ -1082,9 +1082,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
                     AllFaceFromDataBase = usersReplace;
 
-//          people_face_array student = new people_face_array("0", name, 1, , "");
-//          Toast.makeText(DetectorActivity.this, "" + id, Toast.LENGTH_LONG).show();
-
                 } catch (JSONException e) {
                     e.printStackTrace();
                     Toast.makeText(DetectorActivity.this, e.toString(), Toast.LENGTH_LONG).show();
@@ -1216,7 +1213,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 temperatures.clear();
 
                 if (Attendance != 0) {
-                    sendAttendanceToAPI(resultMap.get("Id"), userIDFace.get(resultMap.get("Id")), resultMap.get("Temp"));
+                    sendAttendanceToAPI(resultMap.get("Id"),date, userIDFace.get(resultMap.get("Id")), resultMap.get("Temp"));
                     successToast("Checked");
                 }
 
@@ -1254,21 +1251,21 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             @Override
             public void run() {
                 if (alertDialog.isShowing()) {
-                    alertDialog.dismiss();
+
                     check = 1;
                     Allow_FaceDetect = true;
                     AddedFace = 0;
                     IdFace.clear();
                     temperatures.clear();
 
-                    if (Attendance != 0 && !resultMap.get("Temp").equals("0.0")) {
-                        sendAttendanceToAPI(resultMap.get("email"), userIDFace.get(resultMap.get("email")), resultMap.get("Temp"));
+                    if (Attendance != 0) {
+                        sendAttendanceToAPI(resultMap.get("email"),date, userIDFace.get(resultMap.get("email")), resultMap.get("Temp"));
                         successToast("Checked");
                     }
-                    temporary = 0f;
+                    alertDialog.dismiss();
                 }
             }
-        }, 2000);
+        }, 4000);
 
 
     }
@@ -1410,15 +1407,19 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         mQueue.add(request);
     }
 
-    public void sendAttendanceToAPI(String userEmail, String name, String Temperature) {
+    public void sendAttendanceToAPI(String userEmail, String date, String name, String Temperature) {
 
         location_txt = dropdown.getSelectedItem().toString();
         String Status = "OK";
+        String hour = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
+
 
         Map<String, String> data = new HashMap<>();
+        data.put("date", date);
         data.put("temperature", Temperature);
         data.put("status", Status);
         data.put("location", location_txt);
+        data.put("time", hour);
         data.put("userEmail", userEmail);
 
         AttendanceClient attendanceClient = new AttendanceClient(getApplicationContext());
