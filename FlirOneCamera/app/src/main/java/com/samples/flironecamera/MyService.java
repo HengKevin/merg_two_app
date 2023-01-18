@@ -50,7 +50,7 @@ public class MyService extends Service {
     //private TextView discoveryStatus;
     private TextView descFlirOneStatus;
 
-//    private ImageView msxImage;
+    //    private ImageView msxImage;
 //    private ImageView photoImage;
     final static String MY_ACTION = "MY_ACTION";
 
@@ -207,13 +207,13 @@ public class MyService extends Service {
             try {
                 cameraHandler.connect(identity, connectionStatusListener);
 
-                    updateConnectionText(identity, "CONNECTED");
-                    cameraHandler.startStream(streamDataListener);
+                updateConnectionText(identity, "CONNECTED");
+                cameraHandler.startStream(streamDataListener);
 
             } catch (IOException e) {
 
-                    Log.d(TAG, "Could not connect: " + e);
-                    updateConnectionText(identity, "DISCONNECTED");
+                Log.d(TAG, "Could not connect: " + e);
+                updateConnectionText(identity, "DISCONNECTED");
 //                    descFlirOneStatus.setText("");
 
             }
@@ -232,8 +232,8 @@ public class MyService extends Service {
             cameraHandler.disconnect();
 //            graphicOverlay.clear();
 
-                updateConnectionText(null, "DISCONNECTED");
-                connectedIdentity=null;
+            updateConnectionText(null, "DISCONNECTED");
+            connectedIdentity=null;
 //                    descFlirOneStatus.setText("");
 
         }).start();
@@ -285,12 +285,12 @@ public class MyService extends Service {
     /**
      * Camera connecting state thermalImageStreamListener, keeps track of if the camera is connected or not
      * <p>
-w UI components
+     w UI components
      */
     private ConnectionStatusListener connectionStatusListener = errorCode -> {
         Log.d(TAG, "onDisconnected errorCode:" + errorCode);
 
-       updateConnectionText(connectedIdentity, "DISCONNECTED");
+        updateConnectionText(connectedIdentity, "DISCONNECTED");
     };
 
     private final CameraHandler.StreamDataListener streamDataListener = new CameraHandler.StreamDataListener() {
@@ -316,15 +316,15 @@ w UI components
 //                Log.d(TAG,"framebuffer size:"+framesBuffer.size());
 //                Log.d(TAG,temperatureData);
 
-                FrameDataHolder poll = framesBuffer.poll();
-                assert poll != null;
+            FrameDataHolder poll = framesBuffer.poll();
+            assert poll != null;
 //                msxImage.setImageBitmap(poll.msxatatemperatureData = stringFourDigits(cameraHandler.getLogData());
 //                Toast.makeText(MainActivity.this,temperatureData,Toast.LENGTH_LONG).show();
 //                mybitmap=poll.dcBitmap;
 
 
 
-                // start camera when the temperature equal to human temperature
+            // start camera when the temperature equal to human temperature
 //                if(goToNextAction==1){
 //                    temperatureData=cameraHandler.getInfo();
 //                    if (Float.parseFloat(temperatureData)>=34){
@@ -344,7 +344,7 @@ w UI components
 
 //                tm.setText(temperatureData);
 
-                Log.i("tempppp",temperatureData);
+            Log.i("tempppp",temperatureData);
 
 //                    if (goToNextAction==1){
 //
@@ -367,20 +367,19 @@ w UI components
     /**
      * Camera Discovery thermalImageStreamListener, is notified if a new camera was found during a active discovery phase
      * <p>
-
      */
     private DiscoveryEventListener cameraDiscoveryListener = new DiscoveryEventListener() {
         @Override
         public void onCameraFound(Identity identity) {
             Log.d(TAG, "onCameraFound identity:" + identity);
 
-                    cameraHandler.add(identity);
-                    try{
-                        Connect();
-                    }catch (Exception e){
-                        Log.d(TAG,"NO Connect");
+            cameraHandler.add(identity);
+            try{
+                Connect();
+            }catch (Exception e){
+                Log.d(TAG,"NO Connect");
 
-                    }
+            }
 
 
 
@@ -389,7 +388,7 @@ w UI components
         @Override
         public void onDiscoveryError(CommunicationInterface communicationInterface, ErrorCode errorCode) {
 
-                    stopDiscovery();
+            stopDiscovery();
 
         }
     };
@@ -432,7 +431,7 @@ w UI components
                 case MSG_SAY_HELLO:
                     Toast.makeText(getApplicationContext(), cameraHandler.getInfo(), Toast.LENGTH_SHORT).show();
 //                    Intent n= new Intent(getApplicationContext(),MainActivity.class);
-                    
+
 //                    startActivity(n);
 
                     break;

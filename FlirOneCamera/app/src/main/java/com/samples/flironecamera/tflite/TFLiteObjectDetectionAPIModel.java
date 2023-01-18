@@ -194,8 +194,8 @@ public class TFLiteObjectDetectionAPIModel
 
         float distance = 0;
         for (int i = 0; i < emb.length; i++) {
-              float diff = emb[i] - knownEmb[i];
-              distance += diff*diff;
+          float diff = emb[i] - knownEmb[i];
+          distance = distance + (diff * diff);
         }
         distance = (float) Math.sqrt(distance);
         if (ret == null || distance < ret.second) {
@@ -209,7 +209,7 @@ public class TFLiteObjectDetectionAPIModel
 
 
   @Override
-  public List<Recognition> recognizeImage(final Bitmap bitmap, boolean storeExtra) {
+  public List<Recognition> recognizeImage(Bitmap bitmap, boolean storeExtra) {
     // Log this method so that it can be analyzed with systrace.
     Trace.beginSection("recognizeImage");
 
@@ -221,7 +221,7 @@ public class TFLiteObjectDetectionAPIModel
     imgData.rewind();
     for (int i = 0; i < inputSize; ++i) {
       for (int j = 0; j < inputSize; ++j) {
-        int pixelValue = intValues[i * inputSize + j];
+        int pixelValue = intValues[(i * inputSize) + j];
         if (isModelQuantized) {
           // Quantized model
           imgData.put((byte) ((pixelValue >> 16) & 0xFF));
@@ -249,6 +249,8 @@ public class TFLiteObjectDetectionAPIModel
 
     embeedings = new float[1][OUTPUT_SIZE];
     outputMap.put(0, embeedings);
+    System.out.println("Embeedings!!!!!@@@");
+    System.out.println(embeedings);
     Log.d("embeeding_test",String.valueOf(inputArray[0]));
 
 
@@ -258,29 +260,20 @@ public class TFLiteObjectDetectionAPIModel
     tfLite.runForMultipleInputsOutputs(inputArray, outputMap);
     Trace.endSection();
 
-//    String res = "[";
-//    for (int i = 0; i < embeedings[0].length; i++) {
-//      res += embeedings[0][i]
-//      if (i < embeedings[0].length - 1) res += ", ";
-//    }
-//    res += "]";
-
-
     float distance = Float.MAX_VALUE;
     String id = "0";
     String label = "?";
 
+    System.out.println("About to use findNearest()");
     if (registered.size() > 0) {
-        //LOGGER.i("dataset SIZE: " + registered.size());
         final Pair<String, Float> nearest = findNearest(embeedings[0]);
         if (nearest != null) {
 
-            final String name = nearest.first;
-            label = name;
-            distance = nearest.second;
+          final String name = nearest.first;
+          label = name;
+          distance = nearest.second;
 
-            LOGGER.i("nearest: " + name + " - distance: " + distance);
-
+          LOGGER.i("nearest: " + name + " - distance: " + distance);
 
         }
     }
