@@ -81,7 +81,6 @@ public class SendMail extends AsyncTask{
 
             try {
                 Transport.send(messages);
-//                        Log.d("mail","ok");
             } catch (MessagingException e) {
                 e.printStackTrace();
                 Log.d("mail",e.toString());

@@ -51,13 +51,17 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpEntity;
@@ -65,6 +69,8 @@ import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.m
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.face.Face;
 import com.google.mlkit.vision.face.FaceDetection;
@@ -277,20 +283,20 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
           }
         });
-        db.collection(currentuser).document("Email").get().addOnSuccessListener(documentSnapshot -> {
-
-          if (documentSnapshot.exists()) {
-
-            Map<String, Object> emails = documentSnapshot.getData();
-            for (Map.Entry<String, Object> user_name : emails.entrySet()) {
-              Map<String, Object> mail = (Map<String, Object>) user_name.getValue();
-              em.add(mail.get("email").toString());
-            }
-            successToast(temperatureData);
-            successToast("Registered Face");
-          }
-
-        });
+//            db.collection(currentuser).document("Emergency").get().addOnSuccessListener(documentSnapshot -> {
+//                if (documentSnapshot.exists()) {
+//                    em = (ArrayList<String>) documentSnapshot.get("EMContact");
+//                    successToast(temperatureData);
+//                    successToast("Registered Face");
+//                }
+//            });
+            db.collection(currentuser).document("Emergency").get().addOnSuccessListener(documentSnapshot -> {
+                if (documentSnapshot.exists()) {
+                    em = (ArrayList<String>) documentSnapshot.get("test");
+                    successToast(temperatureData);
+                    successToast("Registered Face");
+                }
+            });
             emailText.setText(email);
 
             dropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -626,8 +632,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 return;
             }
 
-            email = email.replaceAll("\\.", "");
-            name = getNameFromEmail(email);
+            String formatEmail = email.replaceAll("\\.", "");
+            name = getNameFromEmail(formatEmail);
             NameFromFirebase = name;
             ID = email;
 
@@ -1227,7 +1233,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             temp.setTextColor(Color.RED);
             temp.setText("Not Properly Checked");
         }
-        if (Float.parseFloat(resultMap.get("Temp")) >= 37.5) {
+        // I test here
+        if (Float.parseFloat(resultMap.get("Temp")) >= 33.5) {
             temp.setTextColor(Color.RED);
             temp.setTextSize(30);
             temp.setText("Temperature: " + stringFourDigits(resultMap.get("Temp")));
