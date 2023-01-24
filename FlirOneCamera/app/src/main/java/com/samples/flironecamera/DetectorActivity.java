@@ -283,13 +283,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
           }
         });
-//            db.collection(currentuser).document("Emergency").get().addOnSuccessListener(documentSnapshot -> {
-//                if (documentSnapshot.exists()) {
-//                    em = (ArrayList<String>) documentSnapshot.get("EMContact");
-//                    successToast(temperatureData);
-//                    successToast("Registered Face");
-//                }
-//            });
             db.collection(currentuser).document("Emergency").get().addOnSuccessListener(documentSnapshot -> {
                 if (documentSnapshot.exists()) {
                     em = (ArrayList<String>) documentSnapshot.get("test");
@@ -1141,6 +1134,14 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     }
 
+    /**
+     * Save the temperature reading,
+     * If temperature >= 37.5, play a recording "Temperature High"
+     * Else, "Temperature is normal"
+     * @param Id
+     * @param temperatures
+     * @return
+     */
     public HashMap<String, String> StoreAttendance(ArrayList<String> Id, ArrayList<String> temperatures) {
 
 
@@ -1187,7 +1188,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     }
 
 
-    // alert when the application generate the temperature
+    /**
+     * Provide a dialog box to inform the temperature and name of target
+     */
     public void InfoDialog() {
 
 
@@ -1238,6 +1241,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             temp.setTextColor(Color.RED);
             temp.setTextSize(30);
             temp.setText("Temperature: " + stringFourDigits(resultMap.get("Temp")));
+            sendAttendanceToAPI(resultMap.get("email"), date, userIDFace.get(resultMap.get("email")), resultMap.get("Temp"));
             sendMail("Name: " + userIDFace.get(resultMap.get("Id")) + "\n" + "Temperature: " + resultMap.get("Temp") + "\n" + "Location: " + location_txt + "\n" + "Check Time: " + hour);
         } else {
             temp.setTextColor(Color.GREEN);
@@ -1274,7 +1278,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     }
 
-
+    /**
+     * Provide a temperature reading on the screen
+     */
     private void TemperatureDialog() {
         check = 0;
         Noattendance = 0;
@@ -1335,8 +1341,10 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     }
 
 
-//to put the temperature and face into a list
-
+    /**
+     * When face detected, this method will run to get the ID of the face
+     * and invoke the method InfoDialog()
+     */
     public void Check() {
         if (tracker.getName() != "" && Allow_FaceDetect) {
             IdFace.add(tracker.getName());
@@ -1411,9 +1419,10 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
 
     private void sendMail(String message) {
+        String subject = "Student Status Alert";
         for (String email : em) {
-
             SendMail sm = new SendMail(this, email, "Temperature Warning", message);
+            successToast("Email Sent");
             sm.execute();
         }
 
